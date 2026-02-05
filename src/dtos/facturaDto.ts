@@ -1,23 +1,17 @@
-import { IsArray, IsInt, Min, ValidateNested } from "class-validator";
-import { Type } from "class-transformer";
-
-class DetalleFacturaDto {
-  @IsInt()
-  @Min(1)
+export class DetalleFacturaResponseDto {
   productoId!: number;
-
-  @IsInt()
-  @Min(1)
   cantidad!: number;
+  precioUnitario!: number;
+  subtotalLinea!: number;
 }
 
-export class CrearFacturaDto {
-  @IsInt()
-  @Min(1)
+export class FacturaResponseDto {
+  id!: number;
+  numero!: string;
   clienteId!: number;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => DetalleFacturaDto)
-  detalles!: DetalleFacturaDto[];
+  clienteNombre!: string;
+  subtotal!: number;
+  impuesto!: number;
+  total!: number;
+  detalles!: DetalleFacturaResponseDto[];
 }

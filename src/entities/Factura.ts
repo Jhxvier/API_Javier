@@ -4,27 +4,46 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  JoinColumn,
   CreateDateColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { Cliente } from "./Cliente";
 import { DetalleFactura } from "./DetalleFactura";
 
-@Entity()
+@Entity("facturas")
 export class Factura {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @CreateDateColumn()
-  fecha!: Date;
+  @Column({ length: 30, unique: true })
+  numero!: string;
 
-  @Column({ default: true })
-  estado!: boolean;
+  @Column()
+  clienteId!: number;
 
-  @ManyToOne(() => Cliente, (cliente) => cliente.facturas)
+  @ManyToOne(() => Cliente, (cliente) => cliente.facturas, { eager: true })
+  @JoinColumn({ name: "clienteId" })
   cliente!: Cliente;
 
+  @Column("decimal", { precision: 10, scale: 2, default: 0 })
+  subtotal!: number;
+
+  @Column("decimal", { precision: 10, scale: 2, default: 0 })
+  impuesto!: number;
+
+  @Column("decimal", { precision: 10, scale: 2, default: 0 })
+  total!: number;
+
   @OneToMany(() => DetalleFactura, (detalle) => detalle.factura, {
-    cascade: true,
+    cascade: ["insert", "update"],
+    eager: true,
   })
   detalles!: DetalleFactura[];
+
+  @CreateDateColumn()
+  fechaCreacion!: Date;
+
+  @UpdateDateColumn()
+  fechaActualizacion!: Date;
 }

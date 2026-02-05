@@ -15,6 +15,5 @@ export const AppDataSource = new DataSource({
   password: "1234",
   database: "miappserver",
   synchronize: false,
-  logging: false,
   entities: [Usuario, Cliente, Producto, Categoria, Factura, DetalleFactura],
 });

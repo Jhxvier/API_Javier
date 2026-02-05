@@ -8,18 +8,18 @@ import {
 } from "typeorm";
 import { Factura } from "./Factura";
 
-@Entity()
+@Entity("clientes")
 export class Cliente {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ length: 100 })
   nombre!: string;
 
-  @Column({ unique: true })
+  @Column({ length: 100, unique: true })
   correo!: string;
 
-  @Column({ nullable: true })
+  @Column({ length: 20, nullable: true })
   telefono?: string;
 
   @Column({ default: true })

@@ -2,94 +2,106 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Factura } from "../entities/Factura";
 import { DetalleFactura } from "../entities/DetalleFactura";
-import { Cliente } from "../entities/Cliente";
-import { Producto } from "../entities/Producto";
 
-export class FacturaController {
-  //OBTENER FACTURA POR ID CON DETALLES Y PRODUCTOS
-  static getFacturaById = async (req: Request, res: Response) => {
+export class FacturasController {
+  // CREAR FACTURA CON DETALLES
+  static crear = async (req: Request, res: Response) => {
+    const { numero, clienteId, detalles } = req.body;
+
+    // Validaciones mínimas
+    if (
+      !numero ||
+      !clienteId ||
+      !Array.isArray(detalles) ||
+      detalles.length === 0
+    ) {
+      return res.status(400).json({
+        message:
+          "Datos inválidos: numero, clienteId y detalles son requeridos.",
+      });
+    }
+
+    for (const d of detalles) {
+      if (
+        !d.productoId ||
+        !Number.isInteger(d.cantidad) ||
+        d.cantidad <= 0 ||
+        Number(d.precioUnitario) <= 0
+      ) {
+        return res.status(400).json({
+          message:
+            "Detalle inválido (productoId, cantidad>0, precioUnitario>0).",
+        });
+      }
+    }
+
     try {
-      const { id } = req.params;
+      const resultado = await AppDataSource.transaction(async (manager) => {
+        // 1) Calcular totales y crear líneas de detalle
+        const lineas: DetalleFactura[] = detalles.map((d: any) => {
+          const linea = new DetalleFactura();
+          linea.productoId = d.productoId;
+          linea.cantidad = d.cantidad;
+          linea.precioUnitario = Number(d.precioUnitario);
+          linea.subtotalLinea = Number(
+            (linea.cantidad * linea.precioUnitario).toFixed(2),
+          );
+          return linea;
+        });
 
-      const repo = AppDataSource.getRepository(Factura);
+        const subtotal = Number(
+          lineas
+            .reduce((acc, l) => acc + Number(l.subtotalLinea), 0)
+            .toFixed(2),
+        );
+        const impuesto = Number((subtotal * 0.13).toFixed(2)); // IVA 13%
+        const total = Number((subtotal + impuesto).toFixed(2));
 
-      const factura = await repo.findOne({
+        // 2) Crear la factura
+        const factura = new Factura();
+        factura.numero = numero;
+        factura.clienteId = clienteId;
+        factura.subtotal = subtotal;
+        factura.impuesto = impuesto;
+        factura.total = total;
+
+        // 3) Asignar detalles y guardar (cascade insert)
+        factura.detalles = lineas;
+
+        // Guardado con manager dentro de la transacción
+        return await manager.save(Factura, factura);
+      });
+
+      return res.status(201).json({ ok: true, factura: resultado });
+    } catch (error: any) {
+      return res.status(500).json({
+        ok: false,
+        message: "Error al guardar la factura.",
+        detail: String(error?.message ?? error),
+      });
+    }
+  };
+
+  // VER FACTURA POR ID CON DETALLES
+  static verFactura = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+      const facturaRepo = AppDataSource.getRepository(Factura);
+      const factura = await facturaRepo.findOne({
         where: { id: Number(id) },
-        relations: {
-          cliente: true,
-          detalles: {
-            producto: true,
-          },
-        },
+        relations: ["detalles", "cliente"], // trae los detalles y cliente
       });
 
       if (!factura) {
         return res.status(404).json({ message: "Factura no encontrada" });
       }
 
-      return res.json(factura);
-    } catch {
-      return res.status(500).json({ message: "Error al obtener la factura" });
-    }
-  };
-
-  //CREAR FACTURA CON DETALLES
-  static createFactura = async (req: Request, res: Response) => {
-    const { clienteId, detalles } = req.body;
-
-    const queryRunner = AppDataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const clienteRepo = queryRunner.manager.getRepository(Cliente);
-      const productoRepo = queryRunner.manager.getRepository(Producto);
-      const facturaRepo = queryRunner.manager.getRepository(Factura);
-      const detalleRepo = queryRunner.manager.getRepository(DetalleFactura);
-
-      const cliente = await clienteRepo.findOneBy({ id: clienteId });
-      if (!cliente) {
-        return res.status(404).json({ message: "Cliente no existe" });
-      }
-
-      // Crear factura
-      const factura = facturaRepo.create({ cliente });
-      await facturaRepo.save(factura);
-
-      // Crear detalles
-      let contador = 1;
-      for (const d of detalles) {
-        const producto = await productoRepo.findOneBy({ id: d.idProducto });
-        if (!producto) {
-          throw new Error("Producto no existe");
-        }
-
-        const detalle = detalleRepo.create({
-          idFactura: factura.id,
-          idDetalle: contador++,
-          idProducto: producto.id,
-          factura,
-          producto,
-          cantidad: d.cantidad,
-          total: d.cantidad * producto.precio,
-        });
-
-        await detalleRepo.save(detalle);
-      }
-
-      await queryRunner.commitTransaction();
-
-      return res.status(201).json({
-        message: "Factura creada correctamente",
-        facturaId: factura.id,
-      });
+      return res.json({ ok: true, factura });
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      return res.status(500).json({
-        message: "Error al crear la factura",
-      });
-    } finally {
-      await queryRunner.release();
+      return res
+        .status(500)
+        .json({ ok: false, message: "Error al obtener la factura", error });
     }
   };
 }
