@@ -1,18 +1,18 @@
 import { Router } from "express";
-import clientesRoutes from "./clientes";
-import productosRoutes from "./producto";
-import categ from "./categorias";
+import auth from "./auth";
+import usuarios from "./usuario";
+import clientes from "./clientes";
+import categorias from "./categorias";
+import productos from "./producto";
+import facturas from "./factura";
 
-const router = Router();
+const ROUTES = Router();
 
-// Ruta principal
-router.get("/", (req, res) => {
-  res.status(200).json({ message: "API activa" });
-});
+ROUTES.use("/auth", auth);
+ROUTES.use("/usuarios", usuarios);
+ROUTES.use("/clientes", clientes);
+ROUTES.use("/categorias", categorias);
+ROUTES.use("/productos", productos);
+ROUTES.use("/facturas", facturas);
 
-// Subrutas
-router.use("/clientes", clientesRoutes);
-router.use("/productos", productosRoutes);
-router.use("/categorias", categ);
-
-export default router;
+export default ROUTES;

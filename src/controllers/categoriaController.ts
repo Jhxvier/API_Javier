@@ -1,13 +1,14 @@
-import e, { Request, Response } from "express";
+import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Categoria } from "../entities/Categoria";
+import { CategoriaMapper } from "../mappers/categoriasMappers";
 
 class categoriaController {
   // Obtener todas las categorías
   static getAllCategorias = async (req: Request, res: Response) => {
     try {
       // Obtener el repositorio de la entidad Categoria
-      const repo = AppDataSource.getRepository("Categoria");
+      const repo = AppDataSource.getRepository(Categoria);
 
       // Buscar todas las categorías con estado true
       const listaCategorias = await repo.find({ where: { estado: true } });
@@ -20,7 +21,9 @@ class categoriaController {
       }
 
       // Devolver la lista de categorías con un 200
-      return res.status(200).json(listaCategorias);
+      return res
+        .status(200)
+        .json(CategoriaMapper.toCategoriaResponseDtoList(listaCategorias));
     } catch (error) {
       return res.status(500).json({ message: "Error del servidor", error });
     }
@@ -31,18 +34,16 @@ class categoriaController {
     try {
       const { id } = req.params;
 
-      if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ message: "ID inválido" });
-      }
-
-      const repo = AppDataSource.getRepository("Categoria");
+      const repo = AppDataSource.getRepository(Categoria);
       //BUSCAR LA CATEGORIA POR ID Y ESTADO TRUE
       const categoria = await repo.findOneBy({ id: Number(id), estado: true });
 
       if (!categoria) {
         return res.status(404).json({ message: "Categoría no encontrada" });
       }
-      return res.status(200).json(categoria);
+      return res
+        .status(200)
+        .json(CategoriaMapper.toCategoriaResponseDto(categoria));
     } catch (error) {
       return res.status(500).json({ message: "Error del servidor", error });
     }
@@ -53,9 +54,9 @@ class categoriaController {
     try {
       const { nombre, descripcion } = req.body;
 
-      if (!nombre || nombre.trim().length === 0) {
+      /*if (!nombre || nombre.trim().length === 0) {
         return res.status(400).json({ message: "El nombre es requerido" });
-      }
+      }*/
 
       //reglas de negocio
       const repo = AppDataSource.getRepository(Categoria);
@@ -96,16 +97,6 @@ class categoriaController {
       const { id } = req.params;
       const { nombre, descripcion } = req.body;
 
-      //validar el id
-      if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ message: "ID inválido" });
-      }
-
-      //validar el nombre
-      if (!nombre || nombre.trim().length === 0) {
-        return res.status(400).json({ message: "El nombre es requerido" });
-      }
-
       //acceder al repositorio
       const repo = AppDataSource.getRepository(Categoria);
       //buscar la categoria por id y estado true
@@ -134,7 +125,7 @@ class categoriaController {
       await repo.save(categoria);
       return res
         .status(200)
-        .json({ message: "Categoría actualizada exitosamente", categoria });
+        .json(CategoriaMapper.toCategoriaResponseDto(categoria));
     } catch (error) {
       return res.status(500).json({ message: "Error del servidor", error });
     }
@@ -145,10 +136,6 @@ class categoriaController {
       //desetructurizar id
       const { id } = req.params;
 
-      //validar el id
-      if (!id || isNaN(Number(id))) {
-        return res.status(400).json({ message: "ID inválido" });
-      }
       //acceder al repositorio
       const repo = AppDataSource.getRepository(Categoria);
       const categoria = await repo.findOneBy({ id: Number(id) });

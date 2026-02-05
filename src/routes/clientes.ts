@@ -1,9 +1,35 @@
 import { Router } from "express";
-import { ClienteController } from "../controllers/clienteControllers";
+import ClienteController from "../controllers/clienteControllers";
+import { validateRequest } from "../middleware/validateRequest";
+import { CrearActualizarClienteDto } from "../dtos/clienteDto";
+import { idParamDto } from "../dtos/IdParamDto";
 
-const router = Router();
+const ROUTES = Router();
 
-router.get("/", ClienteController.getActivos);
-router.post("/", ClienteController.crear);
+ROUTES.get("/", ClienteController.getAllClientes);
 
-export default router;
+ROUTES.get(
+  "/:id",
+  validateRequest({ params: idParamDto }),
+  ClienteController.getClienteById,
+);
+
+ROUTES.post(
+  "/",
+  validateRequest({ body: CrearActualizarClienteDto }),
+  ClienteController.crearCliente,
+);
+
+ROUTES.patch(
+  "/:id",
+  validateRequest({ params: idParamDto, body: CrearActualizarClienteDto }),
+  ClienteController.actualizarCliente,
+);
+
+ROUTES.delete(
+  "/:id",
+  validateRequest({ params: idParamDto }),
+  ClienteController.eliminarCliente,
+);
+
+export default ROUTES;

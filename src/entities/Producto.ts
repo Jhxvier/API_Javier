@@ -18,14 +18,14 @@ export class Producto {
   precio!: number;
 
   @Column("int")
-  stock!: number;
+  inventario!: number;
 
   @Column({ default: true })
   estado!: boolean;
 
   @CreateDateColumn()
-  createdAt!: Date;
+  fechaCreacion!: Date;
 
   @UpdateDateColumn()
-  updatedAt!: Date;
+  fechaActualizacion!: Date;
 }

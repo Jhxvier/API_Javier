@@ -2,9 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { Factura } from "./Factura";
 
 @Entity()
 export class Cliente {
@@ -23,9 +25,12 @@ export class Cliente {
   @Column({ default: true })
   activo!: boolean;
 
-  @CreateDateColumn()
-  createdAt!: Date;
+  @OneToMany(() => Factura, (factura) => factura.cliente)
+  facturas!: Factura[];
 
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @CreateDateColumn({ name: "fecha_creacion" })
+  fechaCreacion!: Date;
+
+  @UpdateDateColumn({ name: "fecha_actualizacion" })
+  fechaActualizacion!: Date;
 }
