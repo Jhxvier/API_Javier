@@ -10,8 +10,8 @@ export class FacturaMapper {
     return {
       productoId: detalle.productoId,
       cantidad: detalle.cantidad,
-      precioUnitario: detalle.precioUnitario,
-      subtotalLinea: detalle.subtotalLinea,
+      precioUnitario: Number(detalle.precioUnitario),
+      subtotalLinea: Number(detalle.subtotalLinea),
     };
   }
 
@@ -20,11 +20,13 @@ export class FacturaMapper {
       id: factura.id,
       numero: factura.numero,
       clienteId: factura.clienteId,
-      clienteNombre: factura.cliente.nombre,
-      subtotal: factura.subtotal,
-      impuesto: factura.impuesto,
-      total: factura.total,
-      detalles: factura.detalles.map(this.toDetalleDto),
+      clienteNombre: factura.cliente ? factura.cliente.nombre : "",
+      subtotal: Number(factura.subtotal),
+      impuesto: Number(factura.impuesto),
+      total: Number(factura.total),
+      detalles: factura.detalles
+        ? factura.detalles.map((d) => this.toDetalleDto(d))
+        : [],
     };
   }
 }

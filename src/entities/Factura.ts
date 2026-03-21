@@ -35,6 +35,9 @@ export class Factura {
   @Column("decimal", { precision: 10, scale: 2, default: 0 })
   total!: number;
 
+  @Column({ type: "boolean", default: true })
+  estado!: boolean;
+
   @OneToMany(() => DetalleFactura, (detalle) => detalle.factura, {
     cascade: ["insert", "update"],
     eager: true,
